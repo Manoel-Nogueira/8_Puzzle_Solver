@@ -11,6 +11,7 @@ struct boards{
 
     int map[ROW][COLUMN];
     int distanceManhattan;
+    struct boards *parent;
 
 };
 
@@ -45,18 +46,17 @@ gint CompareFunction(gconstpointer num1, gconstpointer numb, gpointer data){
 
 } 
 
-/*
-// Função para encontrar a posição referente a peça que está em x1y1 na matriz objective
-void ReturnX2Y2(int part, int objective[ROW][COLUMN], int *xy[2]){
+// Função para encontrar a posição x y de uma peça no tabuleiro
+void ReturnPosition(int part, int board[ROW][COLUMN], int xy[2]){
 
     for(int aux1 = 0; aux1 < 3; aux1 ++){
 
         for(int aux2 = 0; aux2 < 3; aux2 ++){
 
-            if(objective[aux1][aux2] == part){
+            if(board[aux1][aux2] == part){
 
-                *xy[0] = aux2;
-                *xy[1] = aux1;
+                xy[0] = aux2;
+                xy[1] = aux1;
 
                 return;
 
@@ -67,7 +67,6 @@ void ReturnX2Y2(int part, int objective[ROW][COLUMN], int *xy[2]){
     }
 
 }
-*/
 
 // Função para setar a distância de Manhattan dos tabuleiros
 void CalcDistanceManhattan(struct boards *board, int objective[ROW][COLUMN]){
@@ -83,24 +82,8 @@ void CalcDistanceManhattan(struct boards *board, int objective[ROW][COLUMN]){
 
             int xy[2] = {-1, -1};
 
-            for(int aux3 = 0; aux3 < 3; aux3 ++){
-
-                for(int aux4 = 0; aux4 < 3; aux4 ++){
+            ReturnPosition(board->map[aux1][aux2], objective, xy);
         
-                    if(board->map[aux1][aux2] == objective[aux3][aux4]){
-        
-                        xy[0] = aux4;
-                        xy[1] = aux3;
-                        
-                        // Esse break só vai parar esse for o outro vai continuar
-                        break;
-        
-                    }
-        
-                }
-        
-            }
-
             // Seria bom fazer alguma verificação de erro aqui, esses + 1 é para excluir as posições com 0 da jogada
             distanceManhattan =  distanceManhattan + (abs(aux2 - xy[0]) + abs(aux1 - xy[1]));
 
@@ -193,6 +176,7 @@ int main(){
 
     // Convertendo a lista para o tabuleiro
     struct boards board;
+    board.parent = NULL;
 
     GList *copyChosenOrder = g_list_copy(chosenOrder);
 
