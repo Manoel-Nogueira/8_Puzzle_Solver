@@ -15,7 +15,7 @@ struct boards{
 };
 
 // Função para imprir o tabuleiro
-void printMap(int map[ROW][COLUMN]){
+void PrintMap(int map[ROW][COLUMN]){
 
     for(int aux1 = 0; aux1 < 3; aux1 ++){
 
@@ -31,12 +31,88 @@ void printMap(int map[ROW][COLUMN]){
 
 }
 
-// Função para aleatorizar a lista / decidir a ordem dos itens
-gint compareFunction(gconstpointer num1, gconstpointer numb, gpointer data){
+// Função para imprimir a lista
+void PrintList(gpointer list, gpointer data){
+
+    printf("%d, ", GPOINTER_TO_INT(list));
+
+}
+
+// Função para aleatorizar a lista / decidir a ordem dos items
+gint CompareFunction(gconstpointer num1, gconstpointer numb, gpointer data){
 
     return((g_random_int_range(0, 2) * 2) - 1);
 
 } 
+
+/*
+// Função para encontrar a posição referente a peça que está em x1y1 na matriz objective
+void ReturnX2Y2(int part, int objective[ROW][COLUMN], int *xy[2]){
+
+    for(int aux1 = 0; aux1 < 3; aux1 ++){
+
+        for(int aux2 = 0; aux2 < 3; aux2 ++){
+
+            if(objective[aux1][aux2] == part){
+
+                *xy[0] = aux2;
+                *xy[1] = aux1;
+
+                return;
+
+            }
+
+        }
+
+    }
+
+}
+*/
+
+// Função para setar a distância de Manhattan dos tabuleiros
+void CalcDistanceManhattan(struct boards *board, int objective[ROW][COLUMN]){
+
+    // DM = |x1 - x2| + |y1 - y2|
+    // x1y1 é do board
+
+    int distanceManhattan = 0;
+
+    for(int aux1 = 0; aux1 < 3; aux1 ++){
+
+        for(int aux2 = 0; aux2 < 3; aux2 ++){
+
+            int xy[2] = {-1, -1};
+
+            for(int aux3 = 0; aux3 < 3; aux3 ++){
+
+                for(int aux4 = 0; aux4 < 3; aux4 ++){
+        
+                    if(board->map[aux1][aux2] == objective[aux3][aux4]){
+        
+                        xy[0] = aux4;
+                        xy[1] = aux3;
+                        
+                        // Esse break só vai parar esse for o outro vai continuar
+                        break;
+        
+                    }
+        
+                }
+        
+            }
+
+            // Seria bom fazer alguma verificação de erro aqui, esses + 1 é para excluir as posições com 0 da jogada
+            distanceManhattan =  distanceManhattan + (abs(aux2 - xy[0]) + abs(aux1 - xy[1]));
+
+            //printf("DM: %d\n", distanceManhattan);
+ 
+        }
+
+    }
+
+    board->distanceManhattan = distanceManhattan;
+
+}
 
 int main(){
 
@@ -47,7 +123,7 @@ int main(){
     struct boards objective = {{{0, 1, 2,}, {3, 4, 5}, {6, 7, 8}}, 0};
 
     printf("Objetivo:\n");
-    printMap(objective.map);
+    PrintMap(objective.map);
     printf("\n");
 
     GList *possibleNumbers = NULL;
@@ -94,7 +170,7 @@ int main(){
                     chosenOrder = g_list_append(chosenOrder, GINT_TO_POINTER(findInList));
 
                     printf("Voçê ainda pode escolher os números:\n");
-                    g_list_foreach(possibleNumbers, printList, NULL);
+                    g_list_foreach(possibleNumbers, PrintList, NULL);
                     printf("\n");
 
                     aux ++;
@@ -108,7 +184,7 @@ int main(){
         }else if(input1 == 1){
 
             chosenOrder = g_list_copy(possibleNumbers);
-            chosenOrder = g_list_sort_with_data(chosenOrder, compareFunction, NULL);
+            chosenOrder = g_list_sort_with_data(chosenOrder, CompareFunction, NULL);
 
             g_list_free(possibleNumbers);
 
@@ -133,9 +209,16 @@ int main(){
 
     g_list_free(copyChosenOrder);
 
-    printMap(board.map);
+    PrintMap(board.map);
+
+    // Calculando a distância Manhattan do tabuleiro criado
+    CalcDistanceManhattan(&board, objective.map);
+
+    printf("A distância manhattan desse tabuleiro é: %d\n", board.distanceManhattan);
+
 
     // criar um hashmap ou um array?
+
 
   return 0;
   
