@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <gtk-4.0/gtk/gtk.h>
 #include <glib-2.0/glib.h>
 
@@ -13,8 +14,12 @@ GList *Possible_Boards = NULL;
 struct boards{
 
     int map[ROW][COLUMN];
+    // h(n)
     int distanceManhattan;
+    // g(n)
     int realCost;
+    // f(n) = g(n) + h(n)
+    int fn;
     struct boards *parent;
 
 };
@@ -53,7 +58,7 @@ void PrintPossibleBoards(gpointer possibleBoard, gpointer data){
 }
 
 // Função para aleatorizar a lista / decidir a ordem dos items
-gint CompareFunction(gconstpointer num1, gconstpointer numb, gpointer data){
+gint CompareFunction(gconstpointer num1, gconstpointer numb2, gpointer data){
 
     return((g_random_int_range(0, 2) * 2) - 1);
 
@@ -111,7 +116,12 @@ int CalcDistanceManhattan(int board[ROW][COLUMN], int objective[ROW][COLUMN]){
 }
 
 // Função para calcula o custo real do tabuleiro inicial
+int RealCost(struct boards *current, int next[ROW][COLUMN]){
 
+    int realCost = current->realCost + CalcDistanceManhattan(current->map, next);    
+    return realCost;
+
+}
 
 // Função para copiar uma matriz
 void CopyArray(int original[ROW][COLUMN], int copy[ROW][COLUMN]){
@@ -139,8 +149,62 @@ void PartsSwap(int board[ROW][COLUMN], int xyPart1[2], int xyPart2[2]){
 
 }
 
+// Função para ordenar a Possible_Boards de forma crescente conforme o f(n)
+gint ListOrdering(gconstpointer board1, gconstpointer board2){
+
+    const struct boards *b1 = board1;
+    const struct boards *b2 = board2;
+
+    return b1->fn - b2->fn;
+
+}
+
+// Função para comparar dua matrizes
+bool MatrixComparison(int board1[ROW][COLUMN], int board2[ROW][COLUMN]){
+
+    for(int aux1 = 0; aux1 < 3; aux1 ++){
+
+        for(int aux2 = 0; aux2 < 3; aux2 ++){
+
+            if(board1[aux1][aux2] == board2[aux1][aux2]){
+
+                continue;
+
+            }else {
+
+                return false;
+
+            }
+
+        }
+
+    }
+
+    return true;
+
+}
+
+// Função para verificar se aquele tabuleiro já foi visitado
+bool ExistsBoard(int board1[ROW][COLUMN], GList *ListCompare){
+
+    for(GList *list = ListCompare; list != NULL; list = list->next){
+
+        struct boards *board2 = (struct boards *) list->data;
+
+        if(MatrixComparison(board1, board2->map)){
+
+            return true;
+
+        }
+
+    }
+
+    return false;
+
+}
+
 // Função para criar os possíveis tabuleiros a parti de um tabuleiro
-void PossibleBoards(struct boards *board){
+void PossibleBoards(struct boards *board, int objective[ROW][COLUMN]){
 
     // Posição da peça vazia no tabuleiro
     int xyEmptyPart[2];
@@ -156,9 +220,19 @@ void PossibleBoards(struct boards *board){
         CopyArray(board->map, possibleBoard->map);
         PartsSwap(possibleBoard->map, xyEmptyPart, xy);
 
-        possibleBoard->distanceManhattan = CalcDistanceManhattan(possibleBoard->map, board->map);
+        if(!ExistsBoard(possibleBoard->map, Visited_Boards)){
 
-        Possible_Boards = g_list_append(Possible_Boards, (gpointer) possibleBoard);
+            if(!ExistsBoard(possibleBoard->map, Possible_Boards)){
+
+                possibleBoard->distanceManhattan = CalcDistanceManhattan(possibleBoard->map, objective);
+                possibleBoard->realCost = possibleBoard->realCost + 1;
+                possibleBoard->fn = possibleBoard->realCost + possibleBoard->distanceManhattan;
+
+                Possible_Boards = g_list_append(Possible_Boards, possibleBoard);
+
+            }
+
+        }
 
     }
 
@@ -171,9 +245,19 @@ void PossibleBoards(struct boards *board){
         CopyArray(board->map, possibleBoard->map);
         PartsSwap(possibleBoard->map, xyEmptyPart, xy);
 
-        possibleBoard->distanceManhattan = CalcDistanceManhattan(possibleBoard->map, board->map);
+        if(!ExistsBoard(possibleBoard->map, Visited_Boards)){
 
-        Possible_Boards = g_list_append(Possible_Boards, possibleBoard);
+            if(!ExistsBoard(possibleBoard->map, Possible_Boards)){
+
+                possibleBoard->distanceManhattan = CalcDistanceManhattan(possibleBoard->map, objective);
+                possibleBoard->realCost = possibleBoard->realCost + 1;
+                possibleBoard->fn = possibleBoard->realCost + possibleBoard->distanceManhattan;
+
+                Possible_Boards = g_list_append(Possible_Boards, possibleBoard);
+
+            }
+
+        }
 
     }
 
@@ -186,9 +270,19 @@ void PossibleBoards(struct boards *board){
         CopyArray(board->map, possibleBoard->map);
         PartsSwap(possibleBoard->map, xyEmptyPart, xy);
 
-        possibleBoard->distanceManhattan = CalcDistanceManhattan(possibleBoard->map, board->map);
+        if(!ExistsBoard(possibleBoard->map, Visited_Boards)){
 
-        Possible_Boards = g_list_append(Possible_Boards, possibleBoard);
+            if(!ExistsBoard(possibleBoard->map, Possible_Boards)){
+
+                possibleBoard->distanceManhattan = CalcDistanceManhattan(possibleBoard->map, objective);
+                possibleBoard->realCost = possibleBoard->realCost + 1;
+                possibleBoard->fn = possibleBoard->realCost + possibleBoard->distanceManhattan;
+
+                Possible_Boards = g_list_append(Possible_Boards, possibleBoard);
+
+            }
+
+        }
 
     }
 
@@ -201,9 +295,54 @@ void PossibleBoards(struct boards *board){
         CopyArray(board->map, possibleBoard->map);
         PartsSwap(possibleBoard->map, xyEmptyPart, xy);
 
-        possibleBoard->distanceManhattan = CalcDistanceManhattan(possibleBoard->map, board->map);
+        if(!ExistsBoard(possibleBoard->map, Visited_Boards)){
 
-        Possible_Boards = g_list_append(Possible_Boards, possibleBoard);
+            if(!ExistsBoard(possibleBoard->map, Possible_Boards)){
+
+                possibleBoard->distanceManhattan = CalcDistanceManhattan(possibleBoard->map, objective);
+                possibleBoard->realCost = possibleBoard->realCost + 1;
+                possibleBoard->fn = possibleBoard->realCost + possibleBoard->distanceManhattan;
+
+                Possible_Boards = g_list_append(Possible_Boards, possibleBoard);
+
+            }
+
+        }
+
+    }
+
+}
+
+// Função para fazer a busca A*
+struct boards *AStar(int objective[ROW][COLUMN], int iterationLimit){
+
+    int aux = 0;
+
+    while(aux < iterationLimit){
+
+        // Olhando o primeiro tabuleiro que está em Possible_Boards, esse sendo o tabuleiro com menor f(n)
+        struct boards *board = (struct boards *) Possible_Boards->data;
+
+        if(MatrixComparison(board->map, objective)){
+
+            printf("São iguais, AH É\n");
+
+            return board;
+
+        }
+
+        // Removendo o primeiro tabuleiro que está em Possible_Boards, esse sendo o tabuleiro com menor f(n)
+        Possible_Boards = g_list_delete_link(Possible_Boards, Possible_Boards);
+        
+        // Adcionando o tabuleiro na lista Visited_Boards
+        Visited_Boards = g_list_append(Visited_Boards, board);
+
+        // Ordenando a Possible_Boards de forma crescente
+        Possible_Boards = g_list_sort(Possible_Boards, ListOrdering);
+
+        PossibleBoards(board, objective);
+
+        aux++;
 
     }
 
@@ -215,7 +354,10 @@ int main(){
 
     int input1 = 0;
 
-    struct boards objective = {{{0, 1, 2,}, {3, 4, 5}, {6, 7, 8}}, 0, 0, NULL};
+    struct boards objective = {{{0, 1, 2,}, {3, 4, 5}, {6, 7, 8}}, 0, 0, 0, NULL};
+    
+    // Tabuleiro inicial
+    struct boards *board = malloc(sizeof(struct boards));
 
     printf("Objetivo:\n");
     PrintMap(objective.map);
@@ -287,8 +429,7 @@ int main(){
     };
 
     // Convertendo a lista para o tabuleiro
-    struct boards board;
-    board.parent = NULL;
+    board->parent = NULL;
 
     GList *copyChosenOrder = g_list_copy(chosenOrder);
 
@@ -296,8 +437,8 @@ int main(){
 
         for(int aux2 = 0; aux2 < 3; aux2 ++){
 
-            board.map[aux1][aux2] = GPOINTER_TO_INT(g_list_first(copyChosenOrder)->data);
-            copyChosenOrder = g_list_remove(copyChosenOrder, GINT_TO_POINTER(board.map[aux1][aux2]));
+            board->map[aux1][aux2] = GPOINTER_TO_INT(g_list_first(copyChosenOrder)->data);
+            copyChosenOrder = g_list_remove(copyChosenOrder, GINT_TO_POINTER(board->map[aux1][aux2]));
 
         }
 
@@ -305,20 +446,25 @@ int main(){
 
     g_list_free(copyChosenOrder);
 
-    PrintMap(board.map);
+    PrintMap(board->map);
 
     // Calculando a distância Manhattan do tabuleiro criado
-    board.distanceManhattan = CalcDistanceManhattan(board.map, objective.map);
+    board->distanceManhattan = CalcDistanceManhattan(board->map, objective.map);
 
-    printf("A distância de manhattan desse tabuleiro é: %d\n", board.distanceManhattan);
+    printf("A distância de manhattan desse tabuleiro é: %d\n", board->distanceManhattan);
 
     // Criando e imprimindo os possíveis tabuleiros
-    printf("Possíveis tabuleiros:\n\n");
-    PossibleBoards(&board);
-    g_list_foreach(Possible_Boards, PrintPossibleBoards, NULL);
+    //printf("Possíveis tabuleiros:\n\n");
+    //PossibleBoards(&board);
+    //g_list_foreach(Possible_Boards, PrintPossibleBoards, NULL);
 
     // criar um hashmap ou um array?
 
+    Possible_Boards = g_list_append(Possible_Boards, board);
+
+    struct boards *finalBoard = AStar(objective.map, 20000);
+
+    PrintMap(finalBoard->map);
 
   return 0;
   
