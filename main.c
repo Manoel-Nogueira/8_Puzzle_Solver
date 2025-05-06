@@ -14,6 +14,7 @@ struct boards{
 
     int map[ROW][COLUMN];
     int distanceManhattan;
+    int realCost;
     struct boards *parent;
 
 };
@@ -81,7 +82,7 @@ void ReturnPosition(int part, int board[ROW][COLUMN], int xy[2]){
 }
 
 // Função para setar a distância de Manhattan dos tabuleiros
-void CalcDistanceManhattan(struct boards *board, int objective[ROW][COLUMN]){
+int CalcDistanceManhattan(struct boards *board, int objective[ROW][COLUMN]){
 
     // DM = |x1 - x2| + |y1 - y2|
     // x1y1 é do board
@@ -105,7 +106,7 @@ void CalcDistanceManhattan(struct boards *board, int objective[ROW][COLUMN]){
 
     }
 
-    board->distanceManhattan = distanceManhattan;
+    return distanceManhattan;
 
 }
 
@@ -152,7 +153,7 @@ void PossibleBoards(struct boards *board){
         CopyArray(board->map, possibleBoard->map);
         PartsSwap(possibleBoard->map, xyEmptyPart, xy);
 
-        CalcDistanceManhattan(possibleBoard, board->map);
+        possibleBoard->distanceManhattan = CalcDistanceManhattan(possibleBoard, board->map);
 
         Possible_Boards = g_list_append(Possible_Boards, (gpointer) possibleBoard);
 
@@ -167,7 +168,7 @@ void PossibleBoards(struct boards *board){
         CopyArray(board->map, possibleBoard->map);
         PartsSwap(possibleBoard->map, xyEmptyPart, xy);
 
-        CalcDistanceManhattan(possibleBoard, board->map);
+        possibleBoard->distanceManhattan = CalcDistanceManhattan(possibleBoard, board->map);
 
         Possible_Boards = g_list_append(Possible_Boards, possibleBoard);
 
@@ -182,7 +183,7 @@ void PossibleBoards(struct boards *board){
         CopyArray(board->map, possibleBoard->map);
         PartsSwap(possibleBoard->map, xyEmptyPart, xy);
 
-        CalcDistanceManhattan(possibleBoard, board->map);
+        possibleBoard->distanceManhattan = CalcDistanceManhattan(possibleBoard, board->map);
 
         Possible_Boards = g_list_append(Possible_Boards, possibleBoard);
 
@@ -197,7 +198,7 @@ void PossibleBoards(struct boards *board){
         CopyArray(board->map, possibleBoard->map);
         PartsSwap(possibleBoard->map, xyEmptyPart, xy);
 
-        CalcDistanceManhattan(possibleBoard, board->map);
+        possibleBoard->distanceManhattan = CalcDistanceManhattan(possibleBoard, board->map);
 
         Possible_Boards = g_list_append(Possible_Boards, possibleBoard);
 
@@ -211,7 +212,7 @@ int main(){
 
     int input1 = 0;
 
-    struct boards objective = {{{0, 1, 2,}, {3, 4, 5}, {6, 7, 8}}, 0, NULL};
+    struct boards objective = {{{0, 1, 2,}, {3, 4, 5}, {6, 7, 8}}, 0, 0, NULL};
 
     printf("Objetivo:\n");
     PrintMap(objective.map);
@@ -304,7 +305,7 @@ int main(){
     PrintMap(board.map);
 
     // Calculando a distância Manhattan do tabuleiro criado
-    CalcDistanceManhattan(&board, objective.map);
+    board.distanceManhattan = CalcDistanceManhattan(&board, objective.map);
 
     printf("A distância de manhattan desse tabuleiro é: %d\n", board.distanceManhattan);
 
