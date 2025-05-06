@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <gtk/gtk.h>
+#include <gtk-4.0/gtk/gtk.h>
 #include <glib-2.0/glib.h>
 
 #define ROW 3
 #define COLUMN 3 
+
+GList *Visited_Boards = NULL;
+GList *Possible_Boards = NULL;
 
 // Struct dos tabuleiros e sua respectiva distância de Manhattan
 struct boards{
@@ -36,6 +39,15 @@ void PrintMap(int map[ROW][COLUMN]){
 void PrintList(gpointer list, gpointer data){
 
     printf("%d, ", GPOINTER_TO_INT(list));
+
+}
+
+void PrintPossibleBoards(gpointer possibleBoard, gpointer data){
+
+    struct boards *board = (struct boards *)possibleBoard;
+
+    PrintMap(board->map);
+    printf("\n");
 
 }
 
@@ -97,13 +109,109 @@ void CalcDistanceManhattan(struct boards *board, int objective[ROW][COLUMN]){
 
 }
 
+// Função para copiar uma matriz
+void CopyArray(int original[ROW][COLUMN], int copy[ROW][COLUMN]){
+
+    for(int aux1 = 0; aux1 < 3; aux1 ++){
+
+        for(int aux2 = 0; aux2 < 3; aux2 ++){
+
+            copy[aux1][aux2] = original[aux1][aux2];
+
+        }
+
+    }
+
+} 
+
+// Função para trocar as peças de lugar
+void PartsSwap(int board[ROW][COLUMN], int xyPart1[2], int xyPart2[2]){
+
+    // Acho que eu vou ter que receber o endereço de board
+    int aux = board[xyPart1[1]][xyPart1[0]];
+
+    board[xyPart1[1]][xyPart1[0]] = board[xyPart2[1]][xyPart2[0]];
+    board[xyPart2[1]][xyPart2[0]] = aux;
+
+}
+
+// Função para criar os possíveis tabuleiros a parti de um tabuleiro
+void PossibleBoards(struct boards *board){
+
+    // Posição da peça vazia no tabuleiro
+    int xyEmptyPart[2];
+
+    ReturnPosition(0, board->map, xyEmptyPart);
+    
+    if(xyEmptyPart[0] > 0){
+
+        struct boards *possibleBoard = malloc(sizeof(struct boards));
+        possibleBoard->parent = board; 
+        int xy[2] = {xyEmptyPart[0] - 1, xyEmptyPart[1]};
+
+        CopyArray(board->map, possibleBoard->map);
+        PartsSwap(possibleBoard->map, xyEmptyPart, xy);
+
+        CalcDistanceManhattan(possibleBoard, board->map);
+
+        Possible_Boards = g_list_append(Possible_Boards, (gpointer) possibleBoard);
+
+    }
+
+    if(xyEmptyPart[0] < 2){
+
+        struct boards *possibleBoard = malloc(sizeof(struct boards));
+        possibleBoard->parent = board; 
+        int xy[2] = {xyEmptyPart[0] + 1, xyEmptyPart[1]};
+
+        CopyArray(board->map, possibleBoard->map);
+        PartsSwap(possibleBoard->map, xyEmptyPart, xy);
+
+        CalcDistanceManhattan(possibleBoard, board->map);
+
+        Possible_Boards = g_list_append(Possible_Boards, possibleBoard);
+
+    }
+
+    if(xyEmptyPart[1] > 0){
+
+        struct boards *possibleBoard = malloc(sizeof(struct boards));
+        possibleBoard->parent = board; 
+        int xy[2] = {xyEmptyPart[0], xyEmptyPart[1] - 1};
+
+        CopyArray(board->map, possibleBoard->map);
+        PartsSwap(possibleBoard->map, xyEmptyPart, xy);
+
+        CalcDistanceManhattan(possibleBoard, board->map);
+
+        Possible_Boards = g_list_append(Possible_Boards, possibleBoard);
+
+    }
+
+    if(xyEmptyPart[1] < 2){
+
+        struct boards *possibleBoard = malloc(sizeof(struct boards));
+        possibleBoard->parent = board; 
+        int xy[2] = {xyEmptyPart[0], xyEmptyPart[1] + 1};
+
+        CopyArray(board->map, possibleBoard->map);
+        PartsSwap(possibleBoard->map, xyEmptyPart, xy);
+
+        CalcDistanceManhattan(possibleBoard, board->map);
+
+        Possible_Boards = g_list_append(Possible_Boards, possibleBoard);
+
+    }
+
+}
+
 int main(){
 
     g_random_set_seed((guint32) time(NULL));
 
     int input1 = 0;
 
-    struct boards objective = {{{0, 1, 2,}, {3, 4, 5}, {6, 7, 8}}, 0};
+    struct boards objective = {{{0, 1, 2,}, {3, 4, 5}, {6, 7, 8}}, 0, NULL};
 
     printf("Objetivo:\n");
     PrintMap(objective.map);
@@ -198,8 +306,12 @@ int main(){
     // Calculando a distância Manhattan do tabuleiro criado
     CalcDistanceManhattan(&board, objective.map);
 
-    printf("A distância manhattan desse tabuleiro é: %d\n", board.distanceManhattan);
+    printf("A distância de manhattan desse tabuleiro é: %d\n", board.distanceManhattan);
 
+    // Criando e imprimindo os possíveis tabuleiros
+    printf("Possíveis tabuleiros:\n\n");
+    PossibleBoards(&board);
+    g_list_foreach(Possible_Boards, PrintPossibleBoards, NULL);
 
     // criar um hashmap ou um array?
 
