@@ -21,8 +21,6 @@ ifeq ($(UNAME), Linux)
 	RM := rm -f
 	NUL := /dev/null
 
-	
-
 else
 
 	EXE := $(COMPILEDFILE).exe
